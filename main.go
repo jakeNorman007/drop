@@ -1,64 +1,57 @@
 package main
 
 import (
-  "fmt"
-  "sync"
+	"bufio"
+	"fmt"
+	"log"
+	"net"
+	"os"
 )
 
-type Store struct {
-  store map[string]interface{}
-  mu sync.RWMutex
+func main() {
+	store := NewStore()
+
+	// Start TCP server
+	go func() {
+		listener, err := net.Listen("tcp", ":6379")
+		if err != nil {
+			log.Fatalf("Failed to start server: %v", err)
+		}
+		defer listener.Close()
+		fmt.Println("Server is running on :6379")
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				log.Println("Failed to accept connection:", err)
+				continue
+			}
+			go handleConnection(conn, store)
+		}
+	}()
+
+	// CLI interface
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Println("CLI ready. Type commands (SET, GET, DELETE, LIST).")
+
+	for scanner.Scan() {
+		command := scanner.Text()
+		result := HandleCommand(store, command)
+		fmt.Println(result)
+	}
+	if err := scanner.Err(); err != nil {
+		log.Println("Error reading CLI input:", err)
+	}
 }
 
-func New() *Store {
-  return &Store {
-    store: make(map[string]interface{}),
-  }
-}
-
-func (db *Store) Set(key string, value interface{}) {
-  db.mu.Lock()
-  defer db.mu.Unlock()
-  db.store[key] = value
-}
-
-func (db *Store) Get(key string) (interface{}, bool) {
-  db.mu.RLock()
-  defer db.mu.RUnlock()
-  value, exists := db.store[key]
-  return value, exists
-}
-
-func (db *Store) Delete(key string) {
-  db.mu.Lock()
-  defer db.mu.Unlock()
-  delete(db.store, key)
-}
-
-func (db *Store) Clear() {
-  db.mu.Lock()
-  defer db.mu.Unlock()
-  db.store = make(map[string]interface{})
-}
-
-func (db *Store) List() map[string]interface{} {
-  db.mu.RLock()
-  defer db.mu.RUnlock()
-
-  list := make(map[string]interface{})
-
-  for key, value := range db.store {
-    list[key] = value
-    fmt.Printf("Key: %s, Value: %v\n", key, value)
-  }
-
-  return list
-}
-
-type StoreFunctions interface {
-  Set(key string, value interface{})
-  Get(key string) (interface{}, bool)
-  Delete(key string)
-  Clear()
-  List()
+func handleConnection(conn net.Conn, store *Store) {
+	defer conn.Close()
+	scanner := bufio.NewScanner(conn)
+	for scanner.Scan() {
+		command := scanner.Text()
+		response := HandleCommand(store, command)
+		conn.Write([]byte(response + "\n"))
+	}
+	if err := scanner.Err(); err != nil {
+		log.Println("Connection error:", err)
+	}
 }
