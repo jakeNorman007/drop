@@ -53,3 +53,11 @@ func (s *Store) List() string {
 	}
 	return output
 }
+
+func (s *Store) PutKey(key, newKey string) string {
+  s.mu.Lock()
+  defer s.mu.Unlock()
+	s.data[key] = newKey
+
+  return "confirm key edit"
+}
