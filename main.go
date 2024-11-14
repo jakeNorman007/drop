@@ -8,17 +8,19 @@ import (
 	"os"
 )
 
+const PROMPT = ":3000 > "
+
 func main() {
 	store := NewStore()
 
-	// Start TCP server
 	go func() {
-		listener, err := net.Listen("tcp", ":6379")
+		listener, err := net.Listen("tcp", ":3000")
 		if err != nil {
 			log.Fatalf("Failed to start server: %v", err)
 		}
+
 		defer listener.Close()
-		fmt.Println("Server is running on :6379")
+
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
@@ -29,17 +31,20 @@ func main() {
 		}
 	}()
 
-	// CLI interface
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Println("CLI ready. Type commands (SET, GET, DELETE, LIST).")
+	fmt.Println("Server running")
 
-	for scanner.Scan() {
-		command := scanner.Text()
-		result := HandleCommand(store, command)
+	for {
+    fmt.Printf(PROMPT)
+		command := scanner.Scan()
+    if !command {
+      return
+    }
+
+    line := scanner.Text()
+
+		result := HandleCommand(store, line)
 		fmt.Println(result)
-	}
-	if err := scanner.Err(); err != nil {
-		log.Println("Error reading CLI input:", err)
 	}
 }
 

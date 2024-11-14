@@ -20,7 +20,7 @@ func (s *Store) Set(key, value string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.data[key] = value
-	return "OK"
+	return "set confirmed"
 }
 
 func (s *Store) Get(key string) string {
@@ -28,7 +28,7 @@ func (s *Store) Get(key string) string {
 	defer s.mu.RUnlock()
 	value, exists := s.data[key]
 	if !exists {
-		return "(nil)"
+		return "no values to GET"
 	}
 	return value
 }
@@ -38,10 +38,10 @@ func (s *Store) Delete(key string) string {
 	defer s.mu.Unlock()
 	_, exists := s.data[key]
 	if !exists {
-		return "(nil)"
+		return "no values to DELETE"
 	}
 	delete(s.data, key)
-	return "OK"
+	return "delete confirmed"
 }
 
 func (s *Store) List() string {
@@ -49,7 +49,7 @@ func (s *Store) List() string {
 	defer s.mu.RUnlock()
 	var output string
 	for key, value := range s.data {
-		output += fmt.Sprintf("%s: %s\n", key, value)
+    output += fmt.Sprintf("key: %s, value: %s\n", key, value)
 	}
 	return output
 }
