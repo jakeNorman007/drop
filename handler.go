@@ -33,7 +33,6 @@ func HandleCommand(store *Store, command string) string {
     }
 
     key := parts[1]
-    fmt.Println("Looking for key:", key)
 
     value, exists := store.Get(key)
     if !exists {
@@ -42,23 +41,42 @@ func HandleCommand(store *Store, command string) string {
 
     return value
 
-  case "PUTKEY":
+  case "EKEY":
     if len(parts) < 2 {
-      return "Usage: EDIT key new_value"
+      return "EKEY: edit the key's value"
     }
 
     key := parts[1]
-    newValue := parts[2]
+    newKey := parts[2]
 
     value, exists := store.Get(key)
     if !exists {
-      return fmt.Sprintf("Key '%s' does not exist. Use SET to create it.", key)
+      return fmt.Sprintf("Key '%s' does not exist. Use SET to create.", key)
     }
 
-    store.Set(newValue, value)
+    store.Set(newKey, value)
     store.Delete(key)
 
-    return fmt.Sprintf("Key '%s' updated to '%s'", key, newValue)
+    return fmt.Sprintf("Key '%s' updated to '%s'", key, newKey)
+
+  case "EVALUE":
+    if len(parts) < 2 {
+      return "EVALUE: edit the value of a selected key"
+    }
+
+    key := parts[1]
+    newKey := parts[1]
+    newValue := parts[2]
+
+    _, exists := store.Get(key)
+    if !exists {
+      return fmt.Sprintf("Key '%s' does not exist. Use SET to create.", key)
+    }
+
+    store.Delete(key)
+    store.Set(newKey, newValue)
+
+    return fmt.Sprintf("Key '%s's'value updated to '%s'", key, newValue)
 
   case "DEL":
     if len(parts) != 2 {
@@ -71,6 +89,6 @@ func HandleCommand(store *Store, command string) string {
     return store.List()
 
   default:
-    return "Unknown command"
+    return "Command is unknown"
   }
 }
