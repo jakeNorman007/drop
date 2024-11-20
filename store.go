@@ -3,7 +3,6 @@ package main
 import (
   "fmt"
   "sync"
-  "strings"
 )
 
 type Store struct {
@@ -17,20 +16,27 @@ func NewStore() *Store {
   }
 }
 
+type GenFunctions interface {
+  Set(key, value string) string
+  Get(key string) (string, bool)
+  Delete(key string)
+  List()
+}
+
 func (s *Store) Set(key, value string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.data[key] = value
 
-	return "set confirmed"
+	return "SET confirmed"
 }
 
 func (s *Store) Get(key string) (string, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	value, exists := s.data[strings.ToLower(key)]
+	value, exists := s.data[key]
 
 	return value, exists
 }
@@ -46,7 +52,7 @@ func (s *Store) Delete(key string) string {
 
 	delete(s.data, key)
 
-	return "delete confirmed"
+	return "DELETE confirmed"
 }
 
 func (s *Store) List() string {
